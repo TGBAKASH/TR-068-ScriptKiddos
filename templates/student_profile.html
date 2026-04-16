@@ -17,6 +17,12 @@
             <div style="text-align: left; font-size: 0.9rem;">
                 <p><strong>DOB:</strong> {{ student.dob }}</p>
                 <p><strong>State:</strong> {{ student.state }}</p>
+                {% if student.origin_board %}
+                <p><strong>Origin Board:</strong> {{ student.origin_board }}</p>
+                {% endif %}
+                {% if student.current_board %}
+                <p><strong>Current Board:</strong> {{ student.current_board }}</p>
+                {% endif %}
                 <p><strong>Migration:</strong> {{ student.migration_duration }} months</p>
             </div>
 
@@ -54,16 +60,70 @@
         <div class="card" style="margin-bottom: 1.5rem;">
             <h3 style="margin-top: 0; color: var(--primary);">📊 Deep AI Analysis Results</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                <div style="background: var(--bg-color); padding: 1rem; border-radius: 8px; text-align: center;">
-                    <div style="font-size: 1.8rem; font-weight: bold; color: {% if analysis.risk_level == 'High' %}var(--danger){% elif analysis.risk_level == 'Medium' %}var(--warning){% else %}var(--success){% endif %};">{{ analysis.risk_level }}</div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted);">Academic Risk Level</div>
+                <div style="background: var(--bg-color); padding: 1.5rem; border-radius: 8px; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <div style="font-size: 2rem; font-weight: bold; color: {% if analysis.risk_level == 'High' %}var(--danger){% elif analysis.risk_level == 'Medium' %}var(--warning){% else %}var(--success){% endif %}; text-transform: uppercase;">{{ analysis.risk_level }} RISK</div>
+                    <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.8rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">Academic Risk Level</div>
+                    {% if analysis.risk_reasoning %}
+                    <div style="font-size: 0.85rem; color: var(--text); text-align: left; line-height: 1.4;">{{ analysis.risk_reasoning }}</div>
+                    {% endif %}
                 </div>
-                <div style="background: var(--bg-color); padding: 1rem; border-radius: 8px; text-align: center;">
-                    <div style="font-size: 1.8rem; font-weight: bold; color: var(--primary);">{{ analysis.confidence_score }}%</div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted);">AI Confidence Score</div>
+                <div style="background: var(--bg-color); padding: 1.5rem; border-radius: 8px; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <div style="font-size: 2.2rem; font-weight: bold; color: var(--primary);">{{ analysis.confidence_score }}%</div>
+                    <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.8rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">AI Confidence Score</div>
+                    {% if analysis.confidence_reasoning %}
+                    <div style="font-size: 0.85rem; color: var(--text); text-align: left; line-height: 1.4;">{{ analysis.confidence_reasoning }}</div>
+                    {% endif %}
                 </div>
             </div>
         </div>
+
+        <!-- Growth Progress Summary -->
+        {% if analysis.progress_summary %}
+        <div class="card" style="margin-bottom: 1.5rem; border-left: 5px solid #8b5cf6;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem;">
+                <h3 style="margin-top:0; color: #8b5cf6;">📈 Growth & Progress Timeline Summary</h3>
+                {% if analysis.get('overall_improvement') is not none %}
+                <span style="background: rgba(139,92,246,0.15); border: 1px solid #8b5cf6; color: #8b5cf6; padding: 0.3rem 0.8rem; border-radius: 20px; font-weight: bold; font-size: 0.9rem;">
+                    {{ '+' if analysis.get('overall_improvement') > 0 else '' }}{{ analysis.get('overall_improvement') }}% Metric Shift
+                </span>
+                {% endif %}
+            </div>
+            <p style="margin:0.5rem 0; font-size:0.95rem;">{{ analysis.progress_summary }}</p>
+            {% if analysis.growth_metrics %}
+            <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:1rem;">
+                {% for sub, diff in analysis.growth_metrics.items() %}
+                <span style="background: rgba(139,92,246,0.1); border: 1px solid #8b5cf6; color: #8b5cf6; padding: 0.3rem 0.8rem; border-radius: 6px; font-weight:600; font-size:0.85rem;">{{ sub }}: {{ diff }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Improved vs Lacking Summary -->
+        {% if analysis.progress_improvements or analysis.progress_lacking %}
+        <div class="grid-2" style="gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div class="card" style="margin-bottom: 0; border-top: 4px solid var(--success);">
+                <h3 style="margin-top:0; color: var(--success);">📈 What Improved</h3>
+                <ul style="padding-left: 1.2rem; margin-bottom: 0; font-size: 0.95rem; color: var(--text);">
+                    {% for imp in analysis.progress_improvements %}
+                    <li style="margin-bottom:0.5rem;">{{ imp }}</li>
+                    {% else %}
+                    <li style="color: var(--text-muted); list-style-type: none;">No major improvements tracked.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="card" style="margin-bottom: 0; border-top: 4px solid var(--danger);">
+                <h3 style="margin-top:0; color: var(--danger);">📉 Still Lacking / Needs Focus</h3>
+                <ul style="padding-left: 1.2rem; margin-bottom: 0; font-size: 0.95rem; color: var(--text);">
+                    {% for lack in analysis.progress_lacking %}
+                    <li style="margin-bottom:0.5rem;">{{ lack }}</li>
+                    {% else %}
+                    <li style="color: var(--text-muted); list-style-type: none;">No major deficits or lacking topics flagged.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Learning Level Cards -->
         <div class="card" style="margin-bottom: 1.5rem;">
@@ -181,8 +241,11 @@
         {% endif %}
 
         <!-- Academic Timeline -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 style="margin:0;" class="card-title">📚 Academic Timeline</h2>
+            <a href="{{ url_for('request_update_access', student_id=student._id) }}" class="btn btn-primary" style="font-size: 0.85rem;">+ Add Assessment to Timeline</a>
+        </div>
         <div class="card">
-            <h2 style="margin-top:0;" class="card-title">📚 Academic Timeline</h2>
             <div class="timeline">
                 {% for record in student.records | reverse %}
                 <div class="timeline-item">

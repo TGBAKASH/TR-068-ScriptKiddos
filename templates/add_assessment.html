@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 0 auto;">
+    <h2 class="card-title">📝 Add Future Assessment Timeline</h2>
+    <p class="text-muted" style="margin-bottom: 2rem;">Adding a new assessment record for <strong>{{ student.name }}</strong>. This will be added to their timeline for growth comparison.</p>
+
+    <form action="{{ url_for('add_assessment', student_id=student['_id']) }}" method="POST">
+        <h3 style="border-bottom: 2px solid var(--border); padding-bottom: 0.5rem;">📚 Academic Period Details</h3>
+        <div class="grid-2">
+            <div class="form-group">
+                <label>Current Class / Grade</label>
+                <input type="text" name="current_class" class="form-control" required placeholder="e.g. Class 8">
+            </div>
+            <div class="form-group">
+                <label>Attendance % (Since last assessment)</label>
+                <input type="number" name="attendance" class="form-control" placeholder="e.g. 85">
+            </div>
+            <div class="form-group">
+                <label>Behaviour / Engagement</label>
+                <input type="text" name="behavior" class="form-control" placeholder="e.g. Attentive but quiet">
+            </div>
+        </div>
+        
+        <div class="form-group" style="margin-top: 1rem;">
+            <label>Short oral/written assessment responses (Teacher Notes)</label>
+            <textarea name="teacher_assessment" class="form-control" rows="3" placeholder="Enter findings from oral or written assessment here..."></textarea>
+        </div>
+        
+        <div class="card" style="box-shadow: none; border: 1px dashed var(--primary); margin-top: 1rem;">
+            <h4>Dynamic Subject Tracker</h4>
+            <p class="text-muted" style="font-size: 0.9rem">Add subjects and latest performance marks. Try to include subjects from the previous assessment so the AI can track progress!</p>
+            <div id="subjects-container">
+                <!-- Subject rows appended here via JS -->
+            </div>
+            <button type="button" id="add-subject-btn" class="btn btn-outline">+ Add Subject</button>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="margin-top: 2rem; width: 100%;">Save New Assessment to Timeline</button>
+    </form>
+</div>
+{% endblock %}

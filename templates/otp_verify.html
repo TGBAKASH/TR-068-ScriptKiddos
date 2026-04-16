@@ -2,19 +2,24 @@
 
 {% block content %}
 <div class="card" style="max-width: 500px; margin: auto;">
+    {% if update_flow %}
+    <h2 class="card-title">Authorize Timeline Update</h2>
+    <p>You need parent authorization to add a new assessment timeline record for <strong>{{ student.name }}</strong>.</p>
+    {% else %}
     <h2 class="card-title">Request Access</h2>
     <p>You need permission to view the full details of <strong>{{ student.name }}</strong>.</p>
+    {% endif %}
     
     <div class="alert alert-info" style="margin: 1rem 0;">
         <p style="margin:0;">An OTP has been sent to the parent's registered email address.</p>
     </div>
     
-    <form method="POST" action="{{ url_for('request_access', student_id=student._id) }}">
+    <form method="POST" action="{% if update_flow %}{{ url_for('request_update_access', student_id=student._id) }}{% else %}{{ url_for('request_access', student_id=student._id) }}{% endif %}">
         <div class="form-group">
             <label>Enter Parent OTP</label>
             <input type="text" name="otp" class="form-control" placeholder="6-digit OTP" required maxlength="6">
         </div>
-        <button type="submit" class="btn btn-success" style="width:100%">Verify & Request Access</button>
+        <button type="submit" class="btn btn-success" style="width:100%">Verify & {% if update_flow %}Authorize Update{% else %}Request Access{% endif %}</button>
     </form>
     
     <a href="{{ url_for('dashboard') }}" class="btn btn-outline" style="width: 100%; box-sizing: border-box; margin-top: 1rem;">Back to Dashboard</a>

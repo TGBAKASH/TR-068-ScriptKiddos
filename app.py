@@ -53,16 +53,25 @@ class PostgresCollection:
     def insert_one(self, doc):
         _id = str(doc.get('_id', uuid.uuid4()))
         doc['_id'] = _id
-        conn = self.pool.getconn()
-        try:
-            with conn.cursor() as cur:
-                cur.execute(f"INSERT INTO {self.table} (id, doc) VALUES (%s, %s)", (_id, Json(doc)))
-            conn.commit()
-            class Result:
-                inserted_id = _id
-            return Result()
-        finally:
-            self.pool.putconn(conn)
+        for attempt in range(2):
+            conn = self.pool.getconn()
+            try:
+                with conn.cursor() as cur:
+                    cur.execute(f"INSERT INTO {self.table} (id, doc) VALUES (%s, %s)", (_id, Json(doc)))
+                conn.commit()
+                class Result:
+                    inserted_id = _id
+                return Result()
+            except psycopg2.OperationalError:
+                self.pool.putconn(conn, close=True)
+                if attempt == 1: raise
+                continue
+            except Exception:
+                self.pool.putconn(conn)
+                raise
+            finally:
+                try: self.pool.putconn(conn)
+                except: pass
 
     def find_one(self, query):
         for attempt in range(2):  # retry once on SSL drop
@@ -96,38 +105,47 @@ class PostgresCollection:
                 except: pass
 
     def find(self, query=None):
-        conn = self.pool.getconn()
-        try:
-            with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                if not query:
-                    cur.execute(f"SELECT doc FROM {self.table}")
-                elif "$or" in query:
-                    sql = f"SELECT doc FROM {self.table} WHERE "
-                    where_parts = []
-                    values = []
-                    for cond in query["$or"]:
-                        for k, v in cond.items():
-                            if isinstance(v, dict) and "$regex" in v:
-                                where_parts.append(f"(doc->>%s) ILIKE %s")
-                                values.extend([k, f"%{v['$regex']}%"])
-                    sql += " OR ".join(where_parts)
-                    cur.execute(sql, values)
-                else:
-                    sql = f"SELECT doc FROM {self.table} WHERE "
-                    where_parts = []
-                    values = []
-                    for k, v in query.items():
-                        if isinstance(v, dict) and "$ne" in v:
-                            where_parts.append(f"(doc->>%s) != %s")
-                            values.extend([k, str(v["$ne"])])
-                        else:
-                            where_parts.append(f"(doc->>%s) = %s")
-                            values.extend([k, str(v)])
-                    sql += " AND ".join(where_parts)
-                    cur.execute(sql, values)
-                return [row['doc'] for row in cur.fetchall()]
-        finally:
-            self.pool.putconn(conn)
+        for attempt in range(2):
+            conn = self.pool.getconn()
+            try:
+                with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                    if not query:
+                        cur.execute(f"SELECT doc FROM {self.table}")
+                    elif "$or" in query:
+                        sql = f"SELECT doc FROM {self.table} WHERE "
+                        where_parts = []
+                        values = []
+                        for cond in query["$or"]:
+                            for k, v in cond.items():
+                                if isinstance(v, dict) and "$regex" in v:
+                                    where_parts.append(f"(doc->>%s) ILIKE %s")
+                                    values.extend([k, f"%{v['$regex']}%"])
+                        sql += " OR ".join(where_parts)
+                        cur.execute(sql, values)
+                    else:
+                        sql = f"SELECT doc FROM {self.table} WHERE "
+                        where_parts = []
+                        values = []
+                        for k, v in query.items():
+                            if isinstance(v, dict) and "$ne" in v:
+                                where_parts.append(f"(doc->>%s) != %s")
+                                values.extend([k, str(v["$ne"])])
+                            else:
+                                where_parts.append(f"(doc->>%s) = %s")
+                                values.extend([k, str(v)])
+                        sql += " AND ".join(where_parts)
+                        cur.execute(sql, values)
+                    return [row['doc'] for row in cur.fetchall()]
+            except psycopg2.OperationalError:
+                self.pool.putconn(conn, close=True)
+                if attempt == 1: raise
+                continue
+            except Exception:
+                self.pool.putconn(conn)
+                raise
+            finally:
+                try: self.pool.putconn(conn)
+                except: pass
 
     def update_one(self, query, update):
         doc = self.find_one(query)
@@ -138,23 +156,43 @@ class PostgresCollection:
             for k, v in update["$push"].items():
                 if k not in doc: doc[k] = []
                 doc[k].append(v)
-        conn = self.pool.getconn()
-        try:
-            with conn.cursor() as cur:
-                cur.execute(f"UPDATE {self.table} SET doc = %s WHERE id = %s", (Json(doc), str(doc['_id'])))
-            conn.commit()
-        finally:
-            self.pool.putconn(conn)
+        for attempt in range(2):
+            conn = self.pool.getconn()
+            try:
+                with conn.cursor() as cur:
+                    cur.execute(f"UPDATE {self.table} SET doc = %s WHERE id = %s", (Json(doc), str(doc['_id'])))
+                conn.commit()
+                break
+            except psycopg2.OperationalError:
+                self.pool.putconn(conn, close=True)
+                if attempt == 1: raise
+                continue
+            except Exception:
+                self.pool.putconn(conn)
+                raise
+            finally:
+                try: self.pool.putconn(conn)
+                except: pass
 
     def delete_one(self, query):
         if "_id" not in query: return
-        conn = self.pool.getconn()
-        try:
-            with conn.cursor() as cur:
-                cur.execute(f"DELETE FROM {self.table} WHERE id = %s", (str(query['_id']),))
-            conn.commit()
-        finally:
-            self.pool.putconn(conn)
+        for attempt in range(2):
+            conn = self.pool.getconn()
+            try:
+                with conn.cursor() as cur:
+                    cur.execute(f"DELETE FROM {self.table} WHERE id = %s", (str(query['_id']),))
+                conn.commit()
+                break
+            except psycopg2.OperationalError:
+                self.pool.putconn(conn, close=True)
+                if attempt == 1: raise
+                continue
+            except Exception:
+                self.pool.putconn(conn)
+                raise
+            finally:
+                try: self.pool.putconn(conn)
+                except: pass
 
 class PostgresDB:
     def __init__(self, uri):
@@ -404,6 +442,8 @@ def add_student():
             "last_class": request.form.get('last_class'),
             "state": request.form.get('state'),
             "migration_duration": request.form.get('migration_duration'),
+            "origin_board": request.form.get('origin_board'),
+            "current_board": request.form.get('current_board'),
             "photo_url": request.form.get('photo_base64', ''),
             "parent": {
                 "name": request.form.get('parent_name'),
@@ -495,6 +535,116 @@ def request_access(student_id):
 
 # Entrance test route completely removed per user request
 
+@app.route('/request-update-access/<student_id>', methods=['GET', 'POST'])
+@login_required
+def request_update_access(student_id):
+    from datetime import datetime, timedelta
+    import random
+    
+    student = db.students.find_one({"_id": ObjectId(student_id)})
+    if not student:
+        return "Student not found", 404
+        
+    org_name = session.get('institution_name')
+    action = f"update_auth_{student_id}"
+
+    if request.method == 'POST':
+        entered_otp = request.form.get('otp')
+        otp_record = db.otps.find_one({
+            "student_id": student_id, 
+            "org_name": org_name, 
+            "action": action,
+            "status": "pending"
+        })
+        
+        if otp_record and otp_record['otp'] == entered_otp:
+            # Grant 30-minute session validity
+            session[action] = (datetime.now() + timedelta(minutes=30)).isoformat()
+            db.otps.update_one({"_id": otp_record['_id']}, {"$set": {"status": "used"}})
+            flash("Update access granted for 30 minutes!", "success")
+            return redirect(url_for('add_assessment', student_id=student_id))
+            
+        flash("Invalid OTP. Please try again.", "danger")
+        return redirect(url_for('request_update_access', student_id=student_id))
+
+    existing_otp = db.otps.find_one({
+        "student_id": student_id, 
+        "org_name": org_name, 
+        "action": action,
+        "status": "pending"
+    })
+    
+    if not existing_otp:
+        new_otp = str(random.randint(100000, 999999))
+        db.otps.insert_one({
+            "student_id": student_id, 
+            "org_name": org_name, 
+            "action": action,
+            "otp": new_otp,
+            "expires_at": (datetime.now() + timedelta(minutes=5)).isoformat(), 
+            "status": "pending"
+        })
+        
+        parent_email = student.get('parent', {}).get('email')
+        if parent_email:
+            # Re-using noc email sender for OTP
+            sent = send_noc_email(parent_email, student['name'], org_name + " (Timeline Update Request)", new_otp)
+            if sent:
+                flash("OTP to authorize timeline update has been sent to the parent's email.", "info")
+            else:
+                flash(f"OTP generated. (Check console, mock email printed to `{parent_email}`)", "info")
+        else:
+            flash(f"OTP generated. (Demo Code: {new_otp}) No parent email found.", "info")
+    else:
+        flash("OTP already pending.", "info")
+        
+    return render_template('otp_verify.html', student=student, update_flow=True)
+
+@app.route('/add-assessment/<student_id>', methods=['GET', 'POST'])
+@login_required
+def add_assessment(student_id):
+    from datetime import datetime
+    
+    student = db.students.find_one({"_id": ObjectId(student_id)})
+    if not student:
+        return "Student not found", 404
+        
+    action = f"update_auth_{student_id}"
+    update_expiry = session.get(action)
+    
+    # Check OTP session validity
+    if not update_expiry or datetime.now() > datetime.fromisoformat(update_expiry):
+        flash("Update session expired or not authorized. Please verify OTP.", "warning")
+        return redirect(url_for('request_update_access', student_id=student_id))
+
+    if request.method == 'POST':
+        subjects = {}
+        for name, score in zip(request.form.getlist('subject_name[]'), request.form.getlist('subject_score[]')):
+            if name and score:
+                subjects[normalize_subject(name)] = score
+
+        new_record = {
+            "organisation": session.get('institution_name'),
+            "class": request.form.get('current_class'),
+            "subjects": subjects,
+            "teacher_assessment": request.form.get('teacher_assessment', ''),
+            "attendance": request.form.get('attendance'),
+            "behavior": request.form.get('behavior', '')
+        }
+        
+        db.students.update_one(
+            {"_id": ObjectId(student_id)}, 
+            {"$push": {"records": new_record}}
+        )
+        
+        # Clear the session auth key to enforce new OTP next time
+        session.pop(action, None)
+        
+        flash("Timeline assessment added successfully! Run AI Analysis to see progress.", "success")
+        return redirect(url_for('student_profile', student_id=student_id))
+        
+    return render_template('add_assessment.html', student=student)
+
 @app.route('/rate-plan/<student_id>', methods=['POST'])
 @login_required
 def rate_plan(student_id):
@@ -535,22 +685,36 @@ def run_ai_analysis(student_id):
         "migration_duration": student.get("migration_duration", "")
     }
     
+    has_previous = len(student['records']) > 1
+    previous_record_str = ""
+    if has_previous:
+        prev_record = student['records'][-2]
+        previous_record_str = f"""
+PREVIOUS ASSESSMENT RECORD (For Progress Comparison):
+Subjects Performance: {', '.join([f'{k}: {v}' for k, v in prev_record.get('subjects', {}).items()])}
+Teacher Notes: {prev_record.get('teacher_assessment', 'None')}
+"""
+
     student_str = f"""
-STUDENT DATA:
+STUDENT DATA (Current Assessment):
 Name: {student.get('name', 'Unknown')}
 Age: {student.get('age', 'Unknown')}
 Class: {student.get('last_class', 'Unknown')}
 State of Origin: {student.get('state', 'Unknown')}
+Origin Board Studied On: {student.get('origin_board', 'Not Provided')}
+Current / Joining Board: {student.get('current_board', 'Not Provided')}
 Migration Duration: {student.get('migration_duration', 'Unknown')}
 
-Subjects Performance:
+Current Subjects Performance:
 {', '.join([f'{k}: {v}' for k, v in latest_record.get('subjects', {}).items()])}
 
-Attendance: {latest_record.get('attendance', student.get('attendance', 'Not provided'))}%
-Behavior: {latest_record.get('behavior', latest_record.get('behaviour', student.get('behavior', 'Not provided')))}
+Current Attendance: {latest_record.get('attendance', student.get('attendance', 'Not provided'))}%
+Current Behavior: {latest_record.get('behavior', latest_record.get('behaviour', student.get('behavior', 'Not provided')))}
 
-Teacher Notes:
+Current Teacher Notes:
 {latest_record.get('teacher_assessment', 'No notes provided.')}
+
+{previous_record_str}
 """
 
     # --- REAL CONFIDENCE SCORE CALCULATOR ---
@@ -589,16 +753,25 @@ Teacher Notes:
 
     # --- BOARD DETECTION ---
     origin_state = student.get('state', '').strip().upper()
-    current_board = latest_record.get('board', student.get('board', 'Unknown'))
+    origin_board_input = student.get('origin_board', '').strip()
+    current_board_input = student.get('current_board', latest_record.get('board', student.get('board', 'Unknown'))).strip()
+    
     board_notes = []
-    if origin_state in ['TN', 'TAMIL NADU']:
+    if origin_board_input:
+        board_notes.append(f"Origin board studied on: {origin_board_input}.")
+    elif origin_state in ['TN', 'TAMIL NADU']:
         board_notes.append("Origin board: Tamil Nadu State Board (TNSCERT). Topics like Tamil language, Samacheer curriculum specific topics may be stronger.")
     elif origin_state in ['MH', 'MAHARASHTRA']:
         board_notes.append("Origin board: Maharashtra SSC. Different math progression and Marathi medium possible.")
     elif origin_state in ['KA', 'KARNATAKA']:
         board_notes.append("Origin board: Karnataka SSLC. Kannada language background expected.")
-    if str(current_board).upper() == 'CBSE':
-        board_notes.append("Current receiving school: CBSE. Gap detection should focus on NCERT chapter alignment vs state board sequence.")
+        
+    if current_board_input:
+        board_notes.append(f"Current receiving board: {current_board_input}.")
+    elif str(current_board_input).upper() == 'CBSE':
+        board_notes.append("Current receiving school: CBSE.")
+        
+    board_notes.append("AI Instruction: Deeply compare the syllabus of the origin board vs the current board and identify explicit topic differences that cause friction.")
     
     board_context = '\n'.join(board_notes) if board_notes else 'Board information not specified.'
 
@@ -658,11 +831,26 @@ ANALYSIS INSTRUCTIONS:
    - Actions must be classroom activities: "Use number lines to practice", "Write 3 sentences using past tense"
    - No vague advice like "practice more" or "review concepts"
 
-7. Set confidence_score to exactly: {real_confidence} (pre-calculated)
+7. PROGRESS ANALYSIS (Crucial if PREVIOUS ASSESSMENT RECORD is provided):
+   - Compare "Current Subjects Performance" vs "PREVIOUS ASSESSMENT RECORD" subjects.
+   - Summarize whether the student grew, stagnated, or declined in `progress_summary`.
+   - Populate `growth_metrics` with key metrics that changed (e.g. "Math": "+15 points", "English": "-5 points"). If no previous record, leave these empty.
+   - List explicit positive advancements in `progress_improvements` (e.g. "Mastered basic algebra concepts").
+   - List explicit continuing deficits in `progress_lacking` (e.g. "Still struggling with English paragraph forming").
+
+8. Set confidence_score to exactly: {real_confidence} (pre-calculated)
+
+9. REASONING REQUIREMENTS:
+   - Provide "risk_reasoning" explaining exactly why the Risk Level is what it is (based on Migration Intelligence and scores).
+   - Provide "confidence_reasoning" explaining why the Confidence Score is {real_confidence}%.
 
 ----------------------------------------
 OUTPUT FORMAT (STRICT JSON ONLY):
 {{
+  "progress_summary": "",
+  "growth_metrics": {{}},
+  "progress_improvements": [],
+  "progress_lacking": [],
   "levels": {{}},
   "strengths": [],
   "weaknesses": [],
@@ -678,7 +866,9 @@ OUTPUT FORMAT (STRICT JSON ONLY):
     "week3": {{ "focus": "", "actions": [] }}
   }},
   "risk_level": "Low | Medium | High",
-  "confidence_score": {real_confidence}
+  "risk_reasoning": "",
+  "confidence_score": {real_confidence},
+  "confidence_reasoning": ""
 }}
 
 IMPORTANT RULES:
@@ -710,6 +900,18 @@ IMPORTANT RULES:
             
         ai_analysis = json.loads(response_text)
         
+        # Calculate numeric improvement
+        if has_previous:
+            try:
+                prev_scores = [float(v) for v in student['records'][-2].get('subjects', {}).values() if str(v).replace('.','',1).isdigit()]
+                curr_scores = [float(v) for v in latest_record.get('subjects', {}).values() if str(v).replace('.','',1).isdigit()]
+                if prev_scores and curr_scores:
+                    prev_avg = sum(prev_scores) / len(prev_scores)
+                    curr_avg = sum(curr_scores) / len(curr_scores)
+                    if prev_avg > 0:
+                        ai_analysis['overall_improvement'] = round(((curr_avg - prev_avg) / prev_avg) * 100, 1)
+            except: pass
+        
         student['records'][-1]['ai_analysis'] = ai_analysis
         db.students.update_one({"_id": ObjectId(student_id)}, {"$set": {"records": student['records']}})
         
@@ -725,6 +927,10 @@ IMPORTANT RULES:
         teacher_text = latest_record.get("teacher_assessment", "").strip()
         
         mock_analysis = {
+            "progress_summary": "Offline Mock: No substantial progress data available.",
+            "growth_metrics": {},
+            "progress_improvements": ["Adapted to basic school routine"],
+            "progress_lacking": ["Missing foundational depth in core analytical topics"],
             "levels": {},
             "strengths": [],
             "weaknesses": [],
@@ -738,8 +944,22 @@ IMPORTANT RULES:
                 "week3": {"focus": "Curriculum Mastery", "actions": ["Consolidate memory", "Simulate standard testing"]}
             },
             "risk_level": "Low",
-            "confidence_score": 92
+            "risk_reasoning": "Offline mock default reasoning.",
+            "confidence_score": 92,
+            "confidence_reasoning": "Data fields are well populated."
         }
+        
+        if has_previous:
+            try:
+                prev_scores = [float(v) for v in student['records'][-2].get('subjects', {}).values() if str(v).replace('.','',1).isdigit()]
+                curr_scores = [float(v) for v in latest_record.get('subjects', {}).values() if str(v).replace('.','',1).isdigit()]
+                if prev_scores and curr_scores:
+                    prev_avg = sum(prev_scores) / len(prev_scores)
+                    curr_avg = sum(curr_scores) / len(curr_scores)
+                    if prev_avg > 0:
+                        diff = round(((curr_avg - prev_avg) / prev_avg) * 100, 1)
+                        mock_analysis['overall_improvement'] = diff
+            except: pass
 
         total_score = 0
         valid_scores = 0
