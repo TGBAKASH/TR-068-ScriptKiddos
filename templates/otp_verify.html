@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card" style="max-width: 500px; margin: auto;">
+    <h2 class="card-title">Request Access</h2>
+    <p>You need permission to view the full details of <strong>{{ student.name }}</strong>.</p>
+    
+    <div class="alert alert-info" style="margin: 1rem 0;">
+        <p style="margin:0;">An OTP has been sent to the parent's registered email address.</p>
+    </div>
+    
+    <form method="POST" action="{{ url_for('request_access', student_id=student._id) }}">
+        <div class="form-group">
+            <label>Enter Parent OTP</label>
+            <input type="text" name="otp" class="form-control" placeholder="6-digit OTP" required maxlength="6">
+        </div>
+        <button type="submit" class="btn btn-success" style="width:100%">Verify & Request Access</button>
+    </form>
+    
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline" style="width: 100%; box-sizing: border-box; margin-top: 1rem;">Back to Dashboard</a>
+</div>
+{% endblock %}

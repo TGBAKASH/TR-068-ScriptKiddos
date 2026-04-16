@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card">
+    <h2 class="card-title">Create Student Profile</h2>
+    <p class="text-muted">Please fill in the comprehensive initial details carefully.</p>
+    
+    <form method="POST" action="{{ url_for('add_student') }}">
+        
+        <h3 style="border-bottom: 2px solid var(--border); padding-bottom: 0.5rem;">👶 Basic Info</h3>
+        <div class="grid-3">
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" name="name" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Date of Birth</label>
+                <input type="date" name="dob" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Age</label>
+                <input type="number" name="age" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Last Class Attended</label>
+                <input type="text" name="last_class" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>State of Origin</label>
+                <input type="text" name="state" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Migration Duration (Months)</label>
+                <input type="number" name="migration_duration" class="form-control">
+            </div>
+        </div>
+
+        <h3 style="border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; margin-top: 2rem;">🧑🤝🧑 Parent Details</h3>
+        <div class="grid-3">
+            <div class="form-group"><label>Name</label><input type="text" name="parent_name" class="form-control"></div>
+            <div class="form-group"><label>Email ID</label><input type="email" name="parent_email" class="form-control"></div>
+            <div class="form-group"><label>Phone Number</label><input type="text" name="parent_phone" class="form-control"></div>
+        </div>
+
+        <h3 style="border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; margin-top: 2rem;">🖼️ Student Photo</h3>
+        <div class="form-group">
+            <input type="file" id="photo-upload" accept="image/*" class="form-control">
+            <input type="hidden" name="photo_base64" id="photo_base64">
+            <img id="photo-preview" style="max-width: 150px; margin-top: 1rem; display: none; border-radius: 8px;">
+        </div>
+        
+        <h3 style="border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; margin-top: 2rem;">📚 Initial Academic Record & Assessment</h3>
+        <div class="grid-2">
+            <div class="form-group">
+                <label>Current Class Enrolling For</label>
+                <input type="text" name="current_class" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Attendance %</label>
+                <input type="text" name="attendance" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Behaviour</label>
+                <input type="text" name="behaviour" class="form-control">
+            </div>
+        </div>
+        
+        <div class="form-group" style="margin-top: 1rem;">
+            <label>Short oral/written assessment responses (Enter notes/assessment from field worker)</label>
+            <textarea name="teacher_assessment" class="form-control" rows="3" placeholder="Enter findings from oral or written assessment here..."></textarea>
+        </div>
+        
+        <div class="card" style="box-shadow: none; border: 1px dashed var(--primary); margin-top: 1rem;">
+            <h4>Dynamic Subject Tracker</h4>
+            <p class="text-muted" style="font-size: 0.9rem">Add subjects and latest performance. E.g., 'Weak', '75', 'Good'. Subjects scoring under 50 or marked "Weak" will trigger the Bridge Plan.</p>
+            <div id="subjects-container">
+                <!-- Subject rows appended here via JS -->
+            </div>
+            <button type="button" id="add-subject-btn" class="btn btn-outline">+ Add Subject</button>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="margin-top: 2rem; width: 100%;">Save Student & Profile</button>
+    </form>
+</div>
+{% endblock %}

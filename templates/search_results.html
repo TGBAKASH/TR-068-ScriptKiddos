@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card">
+    <h2 class="card-title">Search Results for "{{ query }}"</h2>
+    
+    <div style="margin-top: 2rem;">
+        {% if results %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Photo</th>
+                        <th>Name</th>
+                        <th>DOB</th>
+                        <th>Current Class</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in results %}
+                    <tr>
+                        <td>
+                            {% if student.photo_url %}
+                            <img src="{{ student.photo_url }}" width="40" height="40" style="border-radius: 50%; object-fit: cover;">
+                            {% else %}
+                            <div style="width: 40px; height: 40px; background: #eee; border-radius: 50%; display: flex; align-items:center; justify-content:center;">👤</div>
+                            {% endif %}
+                        </td>
+                        <td>{{ student.name }}</td>
+                        <td>{{ student.dob }}</td>
+                        <td>
+                            {% if student.records|length > 0 %}
+                                {{ student.records[-1].class }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if session.institution_name in student.get('allowed_orgs', []) or session.user_type == 'SuperAdmin' %}
+                                <a href="{{ url_for('student_profile', student_id=student._id) }}" class="btn btn-primary" style="padding: 0.5rem 1rem;">View Full Profile</a>
+                            {% else %}
+                                <a href="{{ url_for('request_access', student_id=student._id) }}" style="display:inline-block; padding: 0.5rem 1.2rem; background: var(--primary); color: white; border-radius: 8px; font-weight: 600; text-decoration: none;">🔐 Request Access</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="text-muted">No students found matching your search.</p>
+        {% endif %}
+    </div>
+    
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline" style="margin-top: 2rem;">Back to Dashboard</a>
+</div>
+{% endblock %}

@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div style="max-width: 900px; margin: auto;">
+
+    <!-- Action Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;" class="no-print">
+        <div>
+            <h2 style="margin: 0;">📋 Bridge Enrollment Document</h2>
+            <p style="margin: 0.3rem 0 0; color: var(--text-muted); font-size: 0.9rem;">AI-powered pre-filled enrollment report for receiving school</p>
+        </div>
+        <div style="display: flex; gap: 0.8rem;">
+            <a href="{{ url_for('student_profile', student_id=student._id) }}" class="btn btn-outline">← Back to Profile</a>
+            <button onclick="window.print()" class="btn btn-primary">🖨️ Export as PDF</button>
+        </div>
+    </div>
+
+    <!-- Completion Badge -->
+    {% set filled_count = [student.name, student.dob, student.age, student.state, student.migration_duration, student.parent.name] | select | list | length %}
+    {% set completion = (filled_count / 6 * 100) | int %}
+    <div style="text-align:center; margin-bottom: 1.5rem;" class="no-print">
+        <span style="padding: 0.4rem 1.2rem; border-radius: 20px;
+             background: {% if completion >= 80 %}rgba(16,185,129,0.1){% elif completion >= 50 %}rgba(245,158,11,0.1){% else %}rgba(239,68,68,0.1){% endif %};
+             border: 1px solid {% if completion >= 80 %}var(--success){% elif completion >= 50 %}var(--warning){% else %}var(--danger){% endif %};
+             font-weight: 600; font-size: 0.9rem;">
+            Document Completeness: {{ completion }}%
+        </span>
+    </div>
+
+    <div class="card" style="border: 2px solid var(--primary); padding: 2.5rem;">
+
+        <!-- Official Header -->
+        <div style="text-align: center; border-bottom: 2px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 2rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎓</div>
+            <h1 style="margin: 0; font-size: 1.6rem; letter-spacing: 1px;">BRIDGE ENROLLMENT DOCUMENT</h1>
+            <p style="margin: 0.4rem 0 0; color: var(--text-muted); font-size: 0.9rem;">Migrant Student Academic Continuity System (MSACS) · AI-Generated Report</p>
+            <p style="margin: 0.3rem 0 0; font-size: 0.8rem; color: var(--text-muted);">Generated for: <strong>{{ student.name }}</strong> · Confidence Score: <strong>{{ analysis.confidence_score if analysis else '—' }}%</strong></p>
+        </div>
+
+        <!-- Section 1: Student Info -->
+        <div class="grid-2" style="margin-bottom: 2rem; gap: 2rem;">
+            <div>
+                <h3 style="color: var(--primary); margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">👤 Student Information</h3>
+                <table style="width: 100%; font-size: 0.95rem; border-collapse: collapse;">
+                    <tr><td style="padding: 0.5rem 0; color: var(--text-muted); width: 45%;">Full Name</td><td><strong>{{ student.name or '—' }}</strong></td></tr>
+                    <tr><td style="padding: 0.5rem 0; color: var(--text-muted);">Date of Birth</td><td>{{ student.dob or '—' }}</td></tr>
+                    <tr><td style="padding: 0.5rem 0; color: var(--text-muted);">Age</td><td>{{ student.age or '—' }} years</td></tr>
+                    <tr><td style="padding: 0.5rem 0; color: var(--text-muted);">State of Origin</td><td>{{ student.state or '—' }}</td></tr>
+                    <tr><td style="padding: 0.5rem 0; color: var(--text-muted);">Migration Duration</td><td>{{ student.migration_duration or '—' }}</td></tr>
+                    <tr><td style="padding: 0.5rem 0; color: var(--text-muted);">Last Class Attended</td><td>Grade {{ student.last_class or '—' }}</td></tr>
+                </table>
+            </div>
+            <div>
+                <h3 style="color: var(--primary); margin-top: 0; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">👨‍👩‍👧 Parent / Guardian</h3>
+                <table style="width: 100%; font-size: 0.95rem; border-collapse: collapse;">
+                    <tr><td style="padding: 0.5rem 0; color: var(--text-muted); width: 45%;">Name</td><td><strong>{{ student.parent.name or '—' }}</strong></td></tr>
+                    <tr><td style="padding: 0.5rem 0; color: var(--text-muted);">Phone</td><td>{{ student.parent.phone or '—' }}</td></tr>
+                    <tr><td style="padding: 0.5rem 0; color: var(--text-muted);">Email</td><td>{{ student.parent.email or '—' }}</td></tr>
+                </table>
+
+                <h3 style="color: var(--primary); margin-top: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">📍 Academic Risk</h3>
+                {% if analysis %}
+                <div style="padding: 0.8rem 1.2rem; border-radius: 8px; font-weight: 700; font-size: 1.1rem;
+                     background: {% if analysis.risk_level == 'High' %}rgba(239,68,68,0.1){% elif analysis.risk_level == 'Medium' %}rgba(245,158,11,0.1){% else %}rgba(16,185,129,0.1){% endif %};
+                     color: {% if analysis.risk_level == 'High' %}var(--danger){% elif analysis.risk_level == 'Medium' %}var(--warning){% else %}var(--success){% endif %};">
+                    {% if analysis.risk_level == 'High' %}⚠️{% elif analysis.risk_level == 'Medium' %}📊{% else %}✅{% endif %}
+                    Risk Level: {{ analysis.risk_level }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Section 2: Current Learning Levels (from AI) -->
+        {% if analysis and analysis.levels %}
+        <div style="border-top: 1px solid var(--border); padding-top: 1.5rem; margin-bottom: 2rem;">
+            <h3 style="color: var(--primary); margin-top: 0;">📊 AI Evaluated Learning Levels</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0;">Estimated by Claude AI based on academic records and teacher observations.</p>
+            <table class="table" style="font-size: 0.9rem;">
+                <thead>
+                    <tr><th>Subject</th><th>AI Level (with note)</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    {% for subject, level_data in analysis.levels.items() %}
+                    <tr>
+                        <td><strong>{{ subject }}</strong></td>
+                        <td>{{ level_data }}</td>
+                        <td>
+                            {% set level_str = level_data | string | lower %}
+                            {% if 'beginner' in level_str %}<span style="color: var(--danger);">⚠ Needs Support</span>
+                            {% elif 'intermediate' in level_str %}<span style="color: var(--warning);">📈 Progressing</span>
+                            {% else %}<span style="color: var(--success);">✅ On Track</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- Section 3: Learning Gaps -->
+        {% if analysis and analysis.detailed_gaps %}
+        <div style="border-top: 1px solid var(--border); padding-top: 1.5rem; margin-bottom: 2rem;">
+            <h3 style="color: var(--primary); margin-top: 0;">🚧 Identified Learning Gaps</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0;">Specific topic-level gaps detected — receiving school should prioritize these.</p>
+            <ul style="columns: 2; font-size: 0.9rem; padding-left: 1.5rem;">
+                {% for gap in analysis.detailed_gaps %}<li style="margin-bottom: 0.4rem;">{{ gap }}</li>{% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Section 4: Board Gap Analysis -->
+        {% if analysis and analysis.board_gap_analysis %}
+        <div style="border-top: 1px solid var(--border); padding-top: 1.5rem; margin-bottom: 2rem;">
+            <h3 style="color: var(--primary); margin-top: 0;">📚 Curriculum Board Gap Analysis</h3>
+            <p style="font-size: 0.95rem; line-height: 1.7;">{{ analysis.board_gap_analysis }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Section 5: Migration Impact -->
+        {% if analysis and analysis.migration_impact %}
+        <div style="border-top: 1px solid var(--border); padding-top: 1.5rem; margin-bottom: 2rem;">
+            <h3 style="color: var(--warning); margin-top: 0;">🚀 Migration Impact</h3>
+            <p style="font-size: 0.95rem; line-height: 1.7;">{{ analysis.migration_impact }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Section 6: 3-Week Catch-Up Plan -->
+        {% if analysis and analysis.plan %}
+        <div style="border-top: 1px solid var(--border); padding-top: 1.5rem; margin-bottom: 2rem;">
+            <h3 style="color: var(--primary); margin-top: 0;">📅 Personalized 3-Week Catch-Up Plan</h3>
+            <table class="table" style="font-size: 0.9rem;">
+                <thead><tr><th>Week</th><th>Focus Area</th><th>Specific Actions</th></tr></thead>
+                <tbody>
+                    {% for week_name, data in analysis.plan.items() %}
+                    <tr>
+                        <td style="font-weight: 700; white-space: nowrap;">{{ week_name | title }}</td>
+                        <td style="color: var(--primary); font-weight: 600;">{{ data.focus }}</td>
+                        <td>
+                            <ul style="margin: 0; padding-left: 1rem;">
+                                {% for act in data.actions %}<li>{{ act }}</li>{% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- Section 7: Special Remarks -->
+        {% if analysis and analysis.behavior_analysis %}
+        <div style="border-top: 1px solid var(--border); padding-top: 1.5rem; margin-bottom: 2rem;">
+            <h3 style="color: var(--primary); margin-top: 0;">📝 Special Remarks for Receiving School</h3>
+            <p style="font-size: 0.95rem; line-height: 1.7;"><strong>Behavioral Profile:</strong> {{ analysis.behavior_analysis }}</p>
+            {% if analysis.attendance_impact %}
+            <p style="font-size: 0.95rem; line-height: 1.7;"><strong>Attendance Pattern:</strong> {{ analysis.attendance_impact }}</p>
+            {% endif %}
+            {% if analysis.teacher_insights %}
+            <p style="font-weight: 600; margin-bottom: 0.4rem;">Teacher Observations:</p>
+            <ul style="font-size: 0.9rem; padding-left: 1.5rem;">
+                {% for insight in analysis.teacher_insights %}<li>{{ insight }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Section 8: Enrollment Checklist -->
+        <div style="border-top: 1px solid var(--border); padding-top: 1.5rem; margin-bottom: 2rem;">
+            <h3 style="color: var(--primary); margin-top: 0;">✅ Enrollment Checklist</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.9rem;">
+                {% set fields = [
+                    ('Student Name', student.name),
+                    ('Date of Birth', student.dob),
+                    ('Age', student.age),
+                    ('State of Origin', student.state),
+                    ('Migration Duration', student.migration_duration),
+                    ('Parent Name', student.parent.name),
+                    ('Parent Phone', student.parent.phone),
+                    ('AI Learning Level Report', analysis and analysis.levels),
+                    ('Learning Gap Summary', analysis and analysis.detailed_gaps),
+                    ('3-Week Catch-Up Plan', analysis and analysis.plan)
+                ] %}
+                {% for label, val in fields %}
+                <div style="display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.8rem; background: var(--bg-color); border-radius: 6px; border: 1px solid var(--border);">
+                    <span style="color: {% if val %}var(--success){% else %}var(--danger){% endif %}; font-size: 1.1rem;">{% if val %}✅{% else %}❌{% endif %}</span>
+                    <span>{{ label }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Signature Block -->
+        <div style="border-top: 2px solid var(--border); padding-top: 2rem; margin-top: 1rem; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2rem; text-align: center; font-size: 0.85rem; color: var(--text-muted);">
+            <div><div style="border-top: 1px solid var(--text-muted); padding-top: 0.5rem; margin-top: 3rem;">Previous School Principal</div></div>
+            <div><div style="border-top: 1px solid var(--text-muted); padding-top: 0.5rem; margin-top: 3rem;">Parent / Guardian Signature</div></div>
+            <div><div style="border-top: 1px solid var(--text-muted); padding-top: 0.5rem; margin-top: 3rem;">Receiving School Authority</div></div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+@media print {
+    .no-print, .navbar, .alert { display: none !important; }
+    body { background: white !important; color: black !important; font-size: 12px; }
+    .card { box-shadow: none !important; border: 1px solid #ccc !important; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; }
+    h3 { color: #333 !important; }
+}
+</style>
+
+{% endblock %}

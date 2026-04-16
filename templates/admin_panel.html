@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card">
+    <h2 class="card-title">Super Admin Panel</h2>
+    <p>Manage School Registrations</p>
+    
+    <hr style="border: 0; border-top: 1px solid var(--border); margin: 1.5rem 0;">
+    
+    <h3>Pending Approvals ({{ pending|length }})</h3>
+    {% if pending %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Institution</th>
+                    <th>Board</th>
+                    <th>Email</th>
+                    <th>Affiliation No.</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for org in pending %}
+                <tr>
+                    <td>{{ org.institution_name }}</td>
+                    <td>{{ org.board }}</td>
+                    <td>{{ org.email }}</td>
+                    <td>{{ org.affiliation_number or '—' }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('approve_org', org_id=org._id) }}" style="display:inline;">
+                            <button type="submit" name="action" value="approve" class="btn btn-success" style="padding: 0.4rem 0.8rem">Approve</button>
+                            <button type="submit" name="action" value="reject" class="btn btn-danger" style="padding: 0.4rem 0.8rem">Reject</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="text-muted">No pending approvals at the moment.</p>
+    {% endif %}
+    
+    <h3 style="margin-top: 2rem;">Approved Schools ({{ approved|length }})</h3>
+    {% if approved %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Institution</th>
+                <th>Email</th>
+                <th>Board</th>
+                <th>Affiliation No.</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for org in approved %}
+            <tr>
+                <td>{{ org.institution_name }}</td>
+                <td>{{ org.email }}</td>
+                <td>{{ org.board or '—' }}</td>
+                <td>{{ org.affiliation_number or '—' }}</td>
+                <td>
+                    <form method="POST" action="{{ url_for('remove_org', org_id=org._id) }}" style="display:inline;" onsubmit="return confirm('Remove {{ org.institution_name }}? This cannot be undone.')">
+                        <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.8rem">Remove</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p class="text-muted">No approved schools yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

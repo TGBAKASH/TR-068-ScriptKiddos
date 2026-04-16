@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="grid-2" style="grid-template-columns: 300px 1fr; gap: 1.5rem; align-items: start;">
+
+    <!-- ── Sidebar ─────────────────────────────────────────────────────── -->
+    <div>
+        <div class="card" style="text-align: center; padding: 2rem 1.5rem;">
+            {% if student.photo_url %}
+            <img src="{{ student.photo_url }}" style="width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); margin-bottom: 1rem;">
+            {% else %}
+            <div style="width: 110px; height: 110px; border-radius: 50%; background: var(--border); display: flex; align-items:center; justify-content:center; font-size: 2.5rem; margin: 0 auto 1rem;">👤</div>
+            {% endif %}
+            <h2 style="margin: 0;">{{ student.name }}</h2>
+            <p style="color: var(--text-muted); margin: 0.3rem 0 1rem;">Age {{ student.age }} | Class {{ student.last_class }}</p>
+
+            <div style="text-align: left; font-size: 0.9rem;">
+                <p><strong>DOB:</strong> {{ student.dob }}</p>
+                <p><strong>State:</strong> {{ student.state }}</p>
+                <p><strong>Migration:</strong> {{ student.migration_duration }} months</p>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 1rem 0;">
+            <h4 style="margin: 0 0 0.5rem; text-align: left;">Parent Details</h4>
+            <div style="text-align: left; font-size: 0.9rem;">
+                <p><strong>Name:</strong> {{ student.parent.name }}</p>
+                <p><strong>Phone:</strong> {{ student.parent.phone }}</p>
+                <p><strong>Email:</strong> {{ student.parent.email }}</p>
+            </div>
+
+            {% if session.user_type != 'SuperAdmin' %}
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 1rem 0;">
+            {% if student.records %}
+            <button id="run-ai-btn" class="btn btn-primary" style="width: 100%; box-sizing: border-box; margin-bottom: 0.5rem;" onclick="runAIAnalysis('{{ student._id }}')">🌟 Run AI Analysis</button>
+            {% endif %}
+            {% if analysis %}
+            <a href="{{ url_for('bridge_document', student_id=student._id) }}" class="btn btn-outline" style="width: 100%; box-sizing: border-box;">📋 Bridge Document</a>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ── Main Content ────────────────────────────────────────────────── -->
+    <div>
+        <!-- Overlay Loader -->
+        <div id="ai-loading" style="display:none; text-align:center; padding: 3rem; background: var(--bg-color); border-radius: 8px; margin-bottom: 1.5rem; border: 1px dashed var(--primary);">
+            <div style="font-size: 2rem; margin-bottom: 1rem;">🤖</div>
+            <h3 style="margin:0; color:var(--primary);">Claude AI is Analyzing...</h3>
+            <p class="text-muted">Mapping learning gaps and building weekly catch-up plan over dynamic subjects...</p>
+        </div>
+
+        {% if analysis %}
+        <!-- New AI Prompt Metrics -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <h3 style="margin-top: 0; color: var(--primary);">📊 Deep AI Analysis Results</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div style="background: var(--bg-color); padding: 1rem; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 1.8rem; font-weight: bold; color: {% if analysis.risk_level == 'High' %}var(--danger){% elif analysis.risk_level == 'Medium' %}var(--warning){% else %}var(--success){% endif %};">{{ analysis.risk_level }}</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">Academic Risk Level</div>
+                </div>
+                <div style="background: var(--bg-color); padding: 1rem; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 1.8rem; font-weight: bold; color: var(--primary);">{{ analysis.confidence_score }}%</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">AI Confidence Score</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Learning Level Cards -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <h3 style="margin-top:0; color: var(--primary);">🎓 Subject Learning Levels</h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+                {% for subject, level in analysis.levels.items() %}
+                <div style="padding: 0.75rem 1.25rem; border-radius: 8px; text-align: center; min-width: 120px;
+                     background: {% if level == 'Beginner' %}rgba(231,74,59,0.1){% elif level == 'Intermediate' %}rgba(246,194,62,0.15){% else %}rgba(28,200,138,0.1){% endif %};
+                     border: 1px solid {% if level == 'Beginner' %}var(--danger){% elif level == 'Intermediate' %}var(--warning){% else %}var(--success){% endif %};">
+                    <div style="font-size: 1.1rem; font-weight: bold;">{{ subject | capitalize }}</div>
+                    <div style="font-size: 0.9rem; font-weight: bold; margin-top: 0.3rem;
+                         color: {% if level == 'Beginner' %}var(--danger){% elif level == 'Intermediate' %}var(--warning){% else %}var(--success){% endif %};">
+                        {{ level }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="grid-2" style="gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div class="card" style="margin-bottom: 0;">
+                <h3 style="margin-top:0; color: var(--success);">🌟 Strengths</h3>
+                <ul style="padding-left: 1rem; margin-bottom: 0; font-size: 0.9rem;">
+                    {% for s in analysis.strengths %}<li style="margin-bottom:0.4rem;">{{ s }}</li>{% endfor %}
+                </ul>
+            </div>
+            <div class="card" style="margin-bottom: 0;">
+                <h3 style="margin-top:0; color: var(--danger);">⚠️ Weaknesses</h3>
+                <ul style="padding-left: 1rem; margin-bottom: 0; font-size: 0.9rem;">
+                    {% for w in analysis.weaknesses %}<li style="margin-bottom:0.4rem;">{{ w }}</li>{% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <h3 style="margin-top:0; color: var(--primary);">🧠 AI Behavioral & Teacher Insights</h3>
+            <p style="font-size:0.9rem; margin-bottom:0.6rem;"><strong>Behavior:</strong> {{ analysis.behavior_analysis }}</p>
+            <p style="font-size:0.9rem; margin-bottom:0.8rem;"><strong>Attendance Impact:</strong> {{ analysis.attendance_impact }}</p>
+            <p style="font-size:0.85rem; font-weight:600; margin-bottom:0.4rem; color:var(--text-muted);">Teacher Insights:</p>
+            <ul style="padding-left: 1rem; margin-bottom: 0; font-size: 0.88rem;">
+                {% for t in analysis.teacher_insights %}<li style="margin-bottom:0.4rem;">{{ t }}</li>{% endfor %}
+            </ul>
+        </div>
+
+        <!-- Migration Impact -->
+        {% if analysis.migration_impact %}
+        <div class="card" style="margin-bottom: 1.5rem; border-left: 5px solid var(--warning);">
+            <h3 style="margin-top:0; color: var(--warning);">🚀 Migration Intelligence</h3>
+            <p style="margin:0; font-size:0.9rem;">{{ analysis.migration_impact }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Board Gap Analysis -->
+        {% if analysis.board_gap_analysis %}
+        <div class="card" style="margin-bottom: 1.5rem; border-left: 5px solid var(--primary);">
+            <h3 style="margin-top:0; color: var(--primary);">📚 Curriculum Board Gap Analysis</h3>
+            <p style="margin:0; font-size:0.9rem;">{{ analysis.board_gap_analysis }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Learning Gap Summary -->
+        {% if analysis.detailed_gaps %}
+        <div class="card plan-card" style="margin-bottom: 1.5rem;">
+            <h3 style="margin-top:0;">🚧 Specific Identified Gaps</h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                {% for gap in analysis.detailed_gaps %}
+                <span style="background: rgba(231,74,59,0.1); border: 1px solid var(--danger); color: var(--danger); padding: 0.4rem 0.9rem; border-radius: 20px; font-size: 0.85rem;">{{ gap }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Catch-Up Plan Timeline -->
+        {% if analysis.plan %}
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <h3 style="margin-top:0; color: var(--primary);">📅 3-Week Targeted Improvement Plan</h3>
+            <div style="border-left: 3px solid var(--primary); padding-left: 1.5rem;">
+                {% for week_name, data in analysis.plan.items() %}
+                <div style="margin-bottom: 1.5rem; position: relative;">
+                    <div style="position: absolute; left: -1.9rem; top: 4px; width: 14px; height: 14px; border-radius: 50%; background: var(--primary);"></div>
+                    <div style="font-weight: bold; text-transform: capitalize;">{{ week_name }}</div>
+                    <div style="font-size: 0.95rem; color: var(--primary); margin: 0.2rem 0;">Focus: <strong>{{ data.focus }}</strong></div>
+                    <ul style="font-size: 0.9rem; margin-top: 0.5rem; padding-left: 1rem;">
+                        {% for act in data.actions %}
+                        <li>{{ act }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Teacher Rating Section -->
+        <div class="card" style="margin-bottom: 1.5rem;">
+            <h3 style="margin-top:0; color: var(--primary);">⭐ Update Teacher Assessment</h3>
+            <form method="POST" action="{{ url_for('rate_plan', student_id=student._id) }}">
+                <div class="form-group">
+                    <label>Rate the AI Catch-Up Plan Suitability</label>
+                    <div style="display: flex; gap: 0.5rem; margin: 0.5rem 0;">
+                        {% for i in range(1, 6) %}
+                        {% set suit = analysis.catchup_plan_suitability | default(0) | int %}
+                        <button type="button" class="star-btn" data-val="{{ i }}" style="font-size: 1.8rem; background: none; border: none; cursor: pointer; color: {% if suit and i <= suit %}#f6c23e{% else %}#cccccc{% endif %};">★</button>
+                        {% endfor %}
+                    </div>
+                    <input type="hidden" id="rating-input" name="rating" value="{{ analysis.catchup_plan_suitability or 0 }}">
+                </div>
+                <div class="form-group">
+                    <label>Teacher's Own Assessment (Send to AI next time)</label>
+                    <textarea name="teacher_assessment" class="form-control" rows="2" placeholder="Compare your own assessment vs. AI estimate...">{{ student.records[-1].teacher_assessment if student.records else '' }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-success" style="padding: 0.5rem 1.5rem;">Save Assessment</button>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Academic Timeline -->
+        <div class="card">
+            <h2 style="margin-top:0;" class="card-title">📚 Academic Timeline</h2>
+            <div class="timeline">
+                {% for record in student.records | reverse %}
+                <div class="timeline-item">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.5rem;">
+                        <div>
+                            <h3 style="margin: 0; color: var(--primary);">{{ record.organisation or 'Field Record' }}</h3>
+                            <p style="margin: 0.2rem 0 0; color: var(--text-muted); font-size:0.85rem;">Class {{ record.class }}{% if record.attendance %} · Attendance: {{ record.attendance }}%{% endif %}</p>
+                        </div>
+                        {% if record.attendance %}
+                        <span style="font-size:0.8rem; padding:0.2rem 0.7rem; border-radius:20px;
+                            background: {% if record.attendance|int >= 80 %}rgba(16,185,129,0.1){% else %}rgba(245,158,11,0.1){% endif %};
+                            color: {% if record.attendance|int >= 80 %}var(--success){% else %}var(--warning){% endif %};">
+                            {{ '✅' if record.attendance|int >= 80 else '⚠️' }} {{ record.attendance }}% Attendance
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div style="margin-top:0.8rem; display:flex; flex-wrap:wrap; gap:0.4rem;">
+                        {% for sub, score in record.subjects.items() %}
+                        <span style="padding:0.25rem 0.7rem; border-radius:20px; font-size:0.82rem; font-weight:600;
+                            background: {% if score|int >= 75 %}rgba(16,185,129,0.12){% elif score|int >= 50 %}rgba(245,158,11,0.12){% else %}rgba(239,68,68,0.12){% endif %};
+                            color: {% if score|int >= 75 %}var(--success){% elif score|int >= 50 %}var(--warning){% else %}var(--danger){% endif %};
+                            border: 1px solid {% if score|int >= 75 %}rgba(16,185,129,0.3){% elif score|int >= 50 %}rgba(245,158,11,0.3){% else %}rgba(239,68,68,0.3){% endif %};">{{ sub }}: {{ score }}
+                        </span>
+                        {% endfor %}
+                    </div>
+
+                    {% if record.teacher_assessment %}
+                    {% set note = record.teacher_assessment %}
+                    <div style="margin-top:0.8rem;">
+                        <p style="margin:0 0 0.3rem; font-size:0.82rem; font-weight:600; color:var(--text-muted);">📝 Field Assessment</p>
+                        <p class="timeline-note" style="margin:0; font-size:0.88rem; line-height:1.6; color:var(--text-color);">
+                            <span class="note-short">{{ note[:160] }}{% if note|length > 160 %}…{% endif %}</span>
+                            {% if note|length > 160 %}
+                            <span class="note-full" style="display:none;">{{ note }}</span>
+                            <a href="#" class="toggle-note" style="font-size:0.8rem; margin-left:4px; color:var(--primary);">Show more</a>
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% endif %}
+
+                </div>
+                {% else %}
+                <p class="text-muted">No academic records yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function runAIAnalysis(studentId) {
+    const btn = document.getElementById('run-ai-btn');
+    const loader = document.getElementById('ai-loading');
+    
+    btn.disabled = true;
+    btn.innerText = "Processing...";
+    loader.style.display = "block";
+    
+    fetch(`/run-ai-analysis/${studentId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            window.location.reload();
+        } else {
+            alert("Analysis failed: " + data.error);
+            btn.disabled = false;
+            btn.innerText = "🌟 Run AI Analysis";
+            loader.style.display = "none";
+        }
+    })
+    .catch(err => {
+        alert("Error hitting AI endpoint.");
+        btn.disabled = false;
+        btn.innerText = "🌟 Run AI Analysis";
+        loader.style.display = "none";
+    });
+}
+
+// Show more / show less for timeline notes
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('toggle-note')) {
+        e.preventDefault();
+        const p = e.target.closest('.timeline-note');
+        const shortEl = p.querySelector('.note-short');
+        const fullEl = p.querySelector('.note-full');
+        const isExpanded = fullEl.style.display !== 'none';
+        shortEl.style.display = isExpanded ? 'inline' : 'none';
+        fullEl.style.display = isExpanded ? 'none' : 'inline';
+        e.target.textContent = isExpanded ? 'Show more' : 'Show less';
+    }
+
+    // inline-toggle for AI analysis fields
+    if (e.target.classList.contains('inline-toggle')) {
+        e.preventDefault();
+        const span = e.target.previousElementSibling;
+        const isExpanded = e.target.dataset.expanded === 'true';
+        span.textContent = isExpanded ? e.target.dataset.short : e.target.dataset.full;
+        e.target.textContent = isExpanded ? 'more' : 'less';
+        e.target.dataset.expanded = isExpanded ? 'false' : 'true';
+    }
+});
+</script>
+{% endblock %}

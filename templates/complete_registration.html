@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: auto;">
+    <h2 class="card-title">Complete Your School Profile</h2>
+    <p class="text-muted">You've successfully connected with Google! We just need a few more details about your school to submit for admin approval.</p>
+    
+    <form method="POST" action="{{ url_for('complete_registration') }}">
+        <div class="form-group">
+            <label>Institution Name</label>
+            <input type="text" name="institution_name" class="form-control" value="{{ default_name }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Board</label>
+            <select name="board" class="form-control">
+                <option value="None">None / N.A.</option>
+                <option value="CBSE">CBSE</option>
+                <option value="ICSE">ICSE</option>
+                <option value="State Board">State Board</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Affiliation Number (Optional)</label>
+            <input type="text" name="affiliation_number" class="form-control">
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Complete Registration</button>
+    </form>
+</div>
+{% endblock %}

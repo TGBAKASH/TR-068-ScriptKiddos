@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card" style="max-width: 480px; margin: auto;">
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🧑‍💼</div>
+        <h2 class="card-title" style="margin: 0;">NGO Worker Registration</h2>
+        <p class="text-muted" style="margin: 0.5rem 0 0; font-size: 0.9rem;">Create your account to start tracking migrant student continuity.</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }}">{{ msg }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('register_org') }}">
+        <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" name="email" class="form-control" placeholder="your@email.com" required>
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" name="password" class="form-control" placeholder="Choose a strong password" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+            Create Account →
+        </button>
+    </form>
+
+    <div style="margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1.5rem; text-align: center;">
+        <p class="text-muted" style="margin-bottom: 1rem; font-size: 0.9rem;">Or sign up instantly with Google</p>
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+        <div id="g_id_onload"
+             data-client_id="{{ google_client_id }}"
+             data-context="signup"
+             data-ux_mode="popup"
+             data-login_uri="{{ url_for('google_auth', _external=True) }}"
+             data-auto_prompt="false">
+        </div>
+        <div style="display: flex; justify-content: center;">
+            <div class="g_id_signin"
+                 data-type="standard"
+                 data-shape="rectangular"
+                 data-theme="outline"
+                 data-text="signup_with"
+                 data-size="large"
+                 data-logo_alignment="left">
+            </div>
+        </div>
+    </div>
+
+    <p class="text-center" style="margin-top: 1.5rem; font-size: 0.9rem; color: var(--text-muted);">
+        Already have an account? <a href="{{ url_for('login') }}">Login here</a>
+    </p>
+</div>
+{% endblock %}

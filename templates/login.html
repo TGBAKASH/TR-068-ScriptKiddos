@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card" style="max-width: 500px; margin: auto;">
+    <h2 class="card-title text-center">Login</h2>
+    <form method="POST" action="{{ url_for('login') }}">
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="email" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" name="password" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%">Login</button>
+    </form>
+    
+    <div style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1rem; text-align: center;">
+        <p class="text-center">Or continue with Google</p>
+        
+        <!-- Google Identity Services Script -->
+        <script src="https://accounts.google.com/gsi/client" async defer></script>
+        
+        <!-- The Google Button -->
+        <div id="g_id_onload"
+             data-client_id="{{ google_client_id }}"
+             data-context="signin"
+             data-ux_mode="popup"
+             data-login_uri="{{ url_for('google_auth', _external=True) }}"
+             data-auto_prompt="false">
+        </div>
+        
+        <div class="g_id_signin"
+             data-type="standard"
+             data-shape="rectangular"
+             data-theme="outline"
+             data-text="signin_with"
+             data-size="large"
+             data-logo_alignment="left"
+             style="display: flex; justify-content: center;">
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card" style="max-width: 650px; margin: auto;">
+    <h2 class="card-title">Entrance Test & Analysis</h2>
+    <p class="text-muted">Enter scores for <strong>{{ student.name }}</strong>. The system will generate a full NCERT-mapped learning analysis automatically.</p>
+    
+    <hr style="border:0; border-top: 1px solid var(--border); margin: 1.5rem 0;">
+
+    <form method="POST" action="{{ url_for('entrance_test', student_id=student._id) }}">
+        <div class="form-group">
+            <label>Enrolling Into Class</label>
+            <input type="text" name="enrolling_class" class="form-control" required placeholder="e.g. 6">
+        </div>
+        
+        <div class="card" style="box-shadow: none; border: 1px dashed var(--primary); margin-top: 1.5rem;">
+            <h4 style="margin-top: 0;">Subject-wise Scores (%)</h4>
+            <p class="text-muted" style="font-size: 0.85rem; margin-top: -0.5rem;">Enter 0–100 score, or text: <strong>Good</strong> / <strong>Average</strong> / <strong>Weak</strong></p>
+            
+            <div id="subjects-container">
+                <!-- Default 3 subjects -->
+                <div class="subject-row">
+                    <input type="text" name="subject_name[]" class="form-control" placeholder="Subject" value="Math" style="flex:1">
+                    <input type="text" name="subject_score[]" class="form-control" placeholder="Score %" style="flex:1">
+                    <button type="button" class="btn btn-danger btn-remove-subject" style="padding: 0.5rem 0.8rem">✕</button>
+                </div>
+                <div class="subject-row" style="margin-top: 0.5rem;">
+                    <input type="text" name="subject_name[]" class="form-control" placeholder="Subject" value="English" style="flex:1">
+                    <input type="text" name="subject_score[]" class="form-control" placeholder="Score %" style="flex:1">
+                    <button type="button" class="btn btn-danger btn-remove-subject" style="padding: 0.5rem 0.8rem">✕</button>
+                </div>
+                <div class="subject-row" style="margin-top: 0.5rem;">
+                    <input type="text" name="subject_name[]" class="form-control" placeholder="Subject" value="Science" style="flex:1">
+                    <input type="text" name="subject_score[]" class="form-control" placeholder="Score %" style="flex:1">
+                    <button type="button" class="btn btn-danger btn-remove-subject" style="padding: 0.5rem 0.8rem">✕</button>
+                </div>
+            </div>
+            <button type="button" id="add-subject-btn" class="btn btn-outline" style="margin-top: 1rem;">+ Add Subject</button>
+        </div>
+        
+        <div class="alert alert-warning" style="margin-top: 1.5rem;">
+            <strong>AI Analysis:</strong> Submit the scores and proceed to the student's profile. You can then trigger the <b>Run AI Analysis</b> engine to deeply match these subjects to gaps, build a timeline, and estimate levels dynamically.
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Submit & Generate Full Analysis</button>
+        <a href="{{ url_for('student_profile', student_id=student._id) }}" class="btn btn-outline" style="width: 100%; margin-top: 0.5rem; box-sizing: border-box;">Cancel</a>
+    </form>
+</div>
+{% endblock %}
