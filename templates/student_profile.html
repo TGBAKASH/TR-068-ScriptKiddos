@@ -188,8 +188,8 @@
                 <div class="timeline-item">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.5rem;">
                         <div>
-                            <h3 style="margin: 0; color: var(--primary);">{{ record.organisation or 'Field Record' }}</h3>
-                            <p style="margin: 0.2rem 0 0; color: var(--text-muted); font-size:0.85rem;">Class {{ record.class }}{% if record.attendance %} · Attendance: {{ record.attendance }}%{% endif %}</p>
+                            <h3 style="margin: 0; color: var(--primary);">NGO Field Assessment</h3>
+                            <p style="margin: 0.2rem 0 0; color: var(--text-muted); font-size:0.85rem;">Assessed by: {{ record.organisation or 'Field Worker' }} · Class {{ record.class }}{% if record.attendance %} · Attendance: {{ record.attendance }}%{% endif %}</p>
                         </div>
                         {% if record.attendance %}
                         <span style="font-size:0.8rem; padding:0.2rem 0.7rem; border-radius:20px;
