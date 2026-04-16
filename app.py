@@ -836,7 +836,6 @@ ANALYSIS INSTRUCTIONS:
    - Summarize whether the student grew, stagnated, or declined in `progress_summary`.
    - Populate `growth_metrics` with key metrics that changed (e.g. "Math": "+15 points", "English": "-5 points"). If no previous record, leave these empty.
    - List explicit positive advancements in `progress_improvements` (e.g. "Mastered basic algebra concepts").
-   - List explicit continuing deficits in `progress_lacking` (e.g. "Still struggling with English paragraph forming").
 
 8. Set confidence_score to exactly: {real_confidence} (pre-calculated)
 
@@ -850,7 +849,6 @@ OUTPUT FORMAT (STRICT JSON ONLY):
   "progress_summary": "",
   "growth_metrics": {{}},
   "progress_improvements": [],
-  "progress_lacking": [],
   "levels": {{}},
   "strengths": [],
   "weaknesses": [],
@@ -930,7 +928,6 @@ IMPORTANT RULES:
             "progress_summary": "Offline Mock: No substantial progress data available.",
             "growth_metrics": {},
             "progress_improvements": ["Adapted to basic school routine"],
-            "progress_lacking": ["Missing foundational depth in core analytical topics"],
             "levels": {},
             "strengths": [],
             "weaknesses": [],

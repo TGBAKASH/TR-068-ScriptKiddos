@@ -99,29 +99,15 @@
         </div>
         {% endif %}
 
-        <!-- Improved vs Lacking Summary -->
-        {% if analysis.progress_improvements or analysis.progress_lacking %}
-        <div class="grid-2" style="gap: 1.5rem; margin-bottom: 1.5rem;">
-            <div class="card" style="margin-bottom: 0; border-top: 4px solid var(--success);">
-                <h3 style="margin-top:0; color: var(--success);">📈 What Improved</h3>
-                <ul style="padding-left: 1.2rem; margin-bottom: 0; font-size: 0.95rem; color: var(--text);">
-                    {% for imp in analysis.progress_improvements %}
-                    <li style="margin-bottom:0.5rem;">{{ imp }}</li>
-                    {% else %}
-                    <li style="color: var(--text-muted); list-style-type: none;">No major improvements tracked.</li>
-                    {% endfor %}
-                </ul>
-            </div>
-            <div class="card" style="margin-bottom: 0; border-top: 4px solid var(--danger);">
-                <h3 style="margin-top:0; color: var(--danger);">📉 Still Lacking / Needs Focus</h3>
-                <ul style="padding-left: 1.2rem; margin-bottom: 0; font-size: 0.95rem; color: var(--text);">
-                    {% for lack in analysis.progress_lacking %}
-                    <li style="margin-bottom:0.5rem;">{{ lack }}</li>
-                    {% else %}
-                    <li style="color: var(--text-muted); list-style-type: none;">No major deficits or lacking topics flagged.</li>
-                    {% endfor %}
-                </ul>
-            </div>
+        <!-- Improved Summary -->
+        {% if analysis.progress_improvements %}
+        <div class="card" style="margin-bottom: 1.5rem; border-left: 5px solid var(--success);">
+            <h3 style="margin-top:0; color: var(--success);">📈 What Improved Analyzed Progress</h3>
+            <ul style="padding-left: 1.2rem; margin-bottom: 0; font-size: 0.95rem; color: var(--text);">
+                {% for imp in analysis.progress_improvements %}
+                <li style="margin-bottom:0.5rem;">{{ imp }}</li>
+                {% endfor %}
+            </ul>
         </div>
         {% endif %}
 
