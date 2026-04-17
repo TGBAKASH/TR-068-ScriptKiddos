@@ -59,6 +59,29 @@
             transform: translateY(-8px);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
         }
+        
+        /* Force Mobile Override (Bypasses old PWA cached CSS) */
+        @media (max-width: 768px) {
+            .grid-2 {
+                display: block !important;
+            }
+            .action-card {
+                margin-bottom: 1.5rem;
+                padding: 1.5rem !important;
+            }
+            form[action*="search"] {
+                flex-wrap: wrap !important;
+            }
+            form[action*="search"] input {
+                width: 100% !important;
+                flex-basis: 100% !important;
+            }
+            form[action*="search"] button {
+                width: 100% !important;
+                flex-basis: 100% !important;
+                margin-top: 0.5rem;
+            }
+        }
     </style>
 </div>
 {% endblock %}
