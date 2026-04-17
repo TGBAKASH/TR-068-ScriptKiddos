@@ -273,6 +273,19 @@ def index():
         return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
 
+@app.route('/sw.js')
+def serve_sw():
+    from flask import make_response, send_from_directory
+    response = make_response(send_from_directory('static', 'sw.js'))
+    response.headers['Content-Type'] = 'application/javascript'
+    response.headers['Service-Worker-Allowed'] = '/'
+    return response
+
+@app.route('/manifest.json')
+def serve_manifest():
+    from flask import send_from_directory
+    return send_from_directory('static', 'manifest.json', mimetype='application/manifest+json')
+
 @app.route('/register-org', methods=['GET', 'POST'])
 def register_org():
     if request.method == 'POST':
