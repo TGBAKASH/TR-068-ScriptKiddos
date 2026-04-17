@@ -1,29 +1,23 @@
-const CACHE_NAME = 'msacs-cache-v1';
+const CACHE_NAME = 'msacs-cache-v3';
 const urlsToCache = [
-  '/',
   '/static/css/style.css',
   '/static/js/main.js'
 ];
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
   );
+  self.skipWaiting();
 });
 
+// Network-first strategy to prevent "Site can't be reached" loops from poor cache matches
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) {
-          return response;
-        }
-        return fetch(event.request).catch(() => {
-          // Keep it simple
-        });
+    fetch(event.request)
+      .catch((error) => {
+          console.warn("Network fetch failed, attempting cache fallback", error);
+          return caches.match(event.request);
       })
   );
 });

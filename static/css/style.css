@@ -390,3 +390,52 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     padding-bottom: 0.5rem;
     border-bottom: 1px solid var(--border);
 }
+
+/* ======== MOBILE RESPONSIVENESS ======== */
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        padding: 1rem 1.5rem;
+        gap: 1.2rem;
+        text-align: center;
+    }
+    
+    .navbar-brand {
+        font-size: 1.5rem;
+    }
+
+    .nav-links {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.8rem;
+    }
+
+    .nav-links a, .nav-links button, .nav-links span {
+        margin-left: 0;
+        margin-bottom: 0px;
+        padding: 0.5rem 0.8rem;
+        background-color: var(--primary-light);
+        border-radius: 6px;
+        font-size: 0.9rem;
+    }
+    
+    .nav-links span {
+        background-color: transparent;
+        display: none; /* Hide the separator pip on mobile */
+    }
+
+    .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .container {
+        margin: 1.5rem auto;
+        padding: 0 1rem;
+    }
+
+    .card {
+        padding: 1.5rem;
+    }
+}
